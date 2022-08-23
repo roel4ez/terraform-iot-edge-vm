@@ -8,3 +8,8 @@ variable "location" {
   type    = string
   default = "westeurope"
 }
+
+variable "vm_type" {
+  type    = string
+  default = "windows"
+}

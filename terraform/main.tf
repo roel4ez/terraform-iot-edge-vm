@@ -39,4 +39,5 @@ module "iot_edge" {
   location                      = var.location
   vm_user_name                  = var.edge_vm_user_name
   edge_device_connection_string = module.iot_hub.edge_device_connection_string
+  vm_type                       = var.vm_type
 }

@@ -3,8 +3,13 @@ resource "random_string" "vm_user_name" {
   special = false
 }
 
+resource "random_string" "vm_password" {
+  length  = 15
+  special = false
+}
+
 locals {
-  dns_label_prefix = "${var.resource_prefix}-iot-edge"
+  dns_label_prefix = "${var.resource_prefix}-iot"
   vm_user_name     = var.vm_user_name != "" ? var.vm_user_name : random_string.vm_user_name.result
 }
 
@@ -75,6 +80,7 @@ resource "local_file" "ssh" {
 
 resource "azurerm_linux_virtual_machine" "iot_edge" {
   name                            = "${local.dns_label_prefix}-vm"
+  count                           = var.vm_type == "linux" ? 1 : 0
   location                        = var.location
   resource_group_name             = var.resource_group_name
   admin_username                  = local.vm_user_name
@@ -96,6 +102,35 @@ resource "azurerm_linux_virtual_machine" "iot_edge" {
     offer     = "UbuntuServer"
     publisher = "Canonical"
     sku       = "18.04-LTS"
+    version   = "latest"
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+}
+
+resource "azurerm_windows_virtual_machine" "iot_edge" {
+  name                            = "${local.dns_label_prefix}-vm"
+  count                           = var.vm_type == "windows" ? 1 : 0
+  location                        = var.location
+  resource_group_name             = var.resource_group_name
+  admin_username                  = local.vm_user_name
+  admin_password = random_string.vm_password.result
+
+  provision_vm_agent         = false
+  allow_extension_operations = false
+  size                       = "Standard_DS1_v2"
+  network_interface_ids = [
+    azurerm_network_interface.iot_edge.id
+  ]
+  custom_data = base64encode(replace(file("${path.module}/windows-vm-init.ps1"), "<REPLACE_WITH_CONNECTION_STRING>", var.edge_device_connection_string))
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2016-Datacenter"
     version   = "latest"
   }
 

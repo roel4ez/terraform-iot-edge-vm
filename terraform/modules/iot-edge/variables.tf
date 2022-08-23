@@ -21,3 +21,8 @@ variable "vm_user_name" {
 variable "edge_device_connection_string" {
   type = string
 }
+
+variable "vm_type" {
+  type = string
+  default = "linux"
+}
