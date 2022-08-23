@@ -120,7 +120,7 @@ resource "azurerm_windows_virtual_machine" "iot_edge" {
   admin_password = random_string.vm_password.result
 
   provision_vm_agent         = false
-  allow_extension_operations = false
+  allow_extension_operations = true
   size                       = "Standard_DS1_v2"
   network_interface_ids = [
     azurerm_network_interface.iot_edge.id
@@ -138,4 +138,19 @@ resource "azurerm_windows_virtual_machine" "iot_edge" {
     caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"
   }
+}
+
+
+resource "azurerm_virtual_machine_extension" "iot_edge" {
+  count                = var.vm_type == "windows" ? 1 : 0
+  name                 = "iot_edge"
+  virtual_machine_id   = azurerm_windows_virtual_machine.iot_edge[0].id
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
+  type_handler_version = "1.10"
+  settings = <<SETTINGS
+    {
+        "commandToExecute": "powershell -ExecutionPolicy unrestricted -NoProfile -NonInteractive -command \"cp c:/azuredata/customdata.bin c:/azuredata/windows-vm-init.ps1; c:/azuredata/windows-vm-init.ps1\""
+    }
+    SETTINGS
 }
